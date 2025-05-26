@@ -2,7 +2,6 @@
 #include "esp_log.h"
 #include "esp_err.h"
 #include "nvs_flash.h"
-
 #include "esp_spiffs.h"
 
 #define PWDN_GPIO_NUM -1
@@ -102,12 +101,36 @@ void app_main(){
         return;
     }
 
-    result = init_camera(FRAMESIZE_SVGA, 20);
+    result = init_camera(FRAMESIZE_SVGA, 12);
     if (result != ESP_OK){
         ESP_LOGE(TAG, "Failed to init camera (%s), cannot continue", esp_err_to_name(result));
         return;
     }
 
+    ESP_LOGI(TAG, "Taking picture...");
+    camera_fb_t* fb = esp_camera_fb_get();
+    if (!fb){
+        ESP_LOGE(TAG, "Camera capture failed");
+        return;
+    }
 
-    // ESP_LOGI(TAG, "Taking picture...");
+    FILE* file = fopen("/spiflash/photo.jpg", "w");
+    if (!file){
+        ESP_LOGE(TAG, "Failed to open file");
+        esp_camera_fb_return(fb);
+        return;
+    }
+
+    size_t written = fwrite(fb->buf, 1, fb->len, file);
+
+    if (written != fb->len){
+        ESP_LOGE(TAG, "Failed to write complete image");
+        esp_camera_fb_return(fb);
+        fclose(file);
+        return;
+    }
+
+    esp_camera_fb_return(fb);
+    fclose(file);
+    ESP_LOGI(TAG, "File saved to /spiflash/photo.jpg");
 }
