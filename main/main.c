@@ -28,14 +28,14 @@ static const char* TAG = "PROGRAM";
 esp_err_t init_filesystem(const char* base_path, const char* partition_label){
     ESP_LOGI(TAG, "Mounting SPIFFS...");
 
-    esp_vfs_spiffs_conf_t conf = {
+    esp_vfs_spiffs_conf_t config = {
         .base_path = base_path,
         .partition_label = partition_label,
         .max_files = 5,
         .format_if_mount_failed = false
     };
     
-    esp_err_t result = esp_vfs_spiffs_register(&conf);
+    esp_err_t result = esp_vfs_spiffs_register(&config);
     if (result == ESP_OK){
         ESP_LOGI(TAG, "SPIFFS mounted successfully");
         return ESP_OK;
@@ -48,7 +48,7 @@ esp_err_t init_filesystem(const char* base_path, const char* partition_label){
         return result;
     }
 
-    result = esp_vfs_spiffs_register(&conf);
+    result = esp_vfs_spiffs_register(&config);
     if (result != ESP_OK){
         ESP_LOGE(TAG, "Failed to mount SPIFFS after format (%s)", esp_err_to_name(result));
     }
@@ -57,14 +57,8 @@ esp_err_t init_filesystem(const char* base_path, const char* partition_label){
     return ESP_OK;
 }
 
-void app_main(){
-    esp_err_t result = init_filesystem("/spiflash", NULL);
-    if (result != ESP_OK){
-        ESP_LOGE(TAG, "Failed to mount SPIFFS (%s), cannot continue", esp_err_to_name(result));
-        return;
-    }
-
-    camera_config_t camera_config = {
+esp_err_t init_camera(framesize_t frame_size, int jpeg_quality){
+    camera_config_t config = {
         .pin_pwdn = PWDN_GPIO_NUM,
         .pin_reset = RESET_GPIO_NUM,
         .pin_xclk = XCLK_GPIO_NUM,
@@ -85,18 +79,35 @@ void app_main(){
         .ledc_timer = LEDC_TIMER_0,
         .ledc_channel = LEDC_CHANNEL_0,
         .pixel_format = PIXFORMAT_JPEG,
-        .frame_size = FRAMESIZE_SVGA,
-        .jpeg_quality = 12,
+        .frame_size = frame_size,
+        .jpeg_quality = jpeg_quality,
         .fb_count = 1,
         .grab_mode = CAMERA_GRAB_LATEST
     };
 
-    result = esp_camera_init(&camera_config);
+    esp_err_t result = esp_camera_init(&config);
     if (result != ESP_OK){
         ESP_LOGE(TAG, "Camera init failed with error %s", esp_err_to_name(result));
-        return;
+        return result;
     }
 
     ESP_LOGI(TAG, "Camera initialized successfully");
+    return ESP_OK;
+}
+
+void app_main(){
+    esp_err_t result = init_filesystem("/spiflash", NULL);
+    if (result != ESP_OK){
+        ESP_LOGE(TAG, "Failed to mount SPIFFS (%s), cannot continue", esp_err_to_name(result));
+        return;
+    }
+
+    result = init_camera(FRAMESIZE_SVGA, 20);
+    if (result != ESP_OK){
+        ESP_LOGE(TAG, "Failed to init camera (%s), cannot continue", esp_err_to_name(result));
+        return;
+    }
+
+
     // ESP_LOGI(TAG, "Taking picture...");
 }
