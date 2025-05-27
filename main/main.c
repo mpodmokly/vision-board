@@ -1,8 +1,11 @@
+#include <stdio.h>
 #include "esp_camera.h"
 #include "esp_log.h"
 #include "esp_err.h"
 #include "nvs_flash.h"
 #include "esp_spiffs.h"
+
+#include "http_server.h"
 
 #define PWDN_GPIO_NUM -1
 #define RESET_GPIO_NUM -1
@@ -95,6 +98,8 @@ esp_err_t init_camera(framesize_t frame_size, int jpeg_quality){
 }
 
 void app_main(){
+    ESP_ERROR_CHECK(nvs_flash_init());
+
     esp_err_t result = init_filesystem("/spiflash", NULL);
     if (result != ESP_OK){
         ESP_LOGE(TAG, "Failed to mount SPIFFS (%s), cannot continue", esp_err_to_name(result));
@@ -114,7 +119,7 @@ void app_main(){
         return;
     }
 
-    FILE* file = fopen("/spiflash/photo.jpg", "w");
+    FILE* file = fopen("/spiflash/photo.jpg", "wb");
     if (!file){
         ESP_LOGE(TAG, "Failed to open file");
         esp_camera_fb_return(fb);
@@ -133,4 +138,7 @@ void app_main(){
     esp_camera_fb_return(fb);
     fclose(file);
     ESP_LOGI(TAG, "File saved to /spiflash/photo.jpg");
+
+    connect_wifi();
+    start_http_server();
 }

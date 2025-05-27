@@ -1,5 +1,4 @@
 .vscode/
 build/
-components/
 dependencies.lock
-temp/
+wifi_config.h
