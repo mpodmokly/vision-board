@@ -3,5 +3,3 @@ build/
 dependencies.lock
 wifi_config.h
 images/
-images_small/
-*.jpg
