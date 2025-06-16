@@ -59,7 +59,7 @@ esp_err_t init_filesystem(const char* base_path, const char* partition_label){
     return ESP_OK;
 }
 
-esp_err_t init_camera(framesize_t frame_size, int jpeg_quality){
+esp_err_t init_camera(){
     camera_config_t config = {
         .pin_pwdn = PWDN_GPIO_NUM,
         .pin_reset = RESET_GPIO_NUM,
@@ -81,8 +81,8 @@ esp_err_t init_camera(framesize_t frame_size, int jpeg_quality){
         .ledc_timer = LEDC_TIMER_0,
         .ledc_channel = LEDC_CHANNEL_0,
         .pixel_format = PIXFORMAT_JPEG,
-        .frame_size = frame_size,
-        .jpeg_quality = jpeg_quality,
+        .frame_size = FRAMESIZE_SVGA,
+        .jpeg_quality = 10,
         .fb_count = 1,
         .grab_mode = CAMERA_GRAB_LATEST
     };
@@ -106,7 +106,7 @@ void app_main(){
         return;
     }
 
-    result = init_camera(FRAMESIZE_SVGA, 12);
+    result = init_camera();
     if (result != ESP_OK){
         ESP_LOGE(TAG, "Failed to init camera (%s), cannot continue", esp_err_to_name(result));
         return;
