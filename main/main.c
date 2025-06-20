@@ -149,5 +149,8 @@ void app_main(){
     result = start_http_server();
     if (result != ESP_OK){
         ESP_LOGE(TAG, "Failed to start HTTP server: %s", esp_err_to_name(result));
+        return;
     }
+
+    ESP_LOGI(TAG, "HTTP server launched");
 }
