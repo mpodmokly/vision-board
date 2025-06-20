@@ -11,6 +11,17 @@
 #include "wifi_config.h"
 
 static const char* TAG = "HTTP SERVER";
+static const char index_html[] =
+"<!DOCTYPE html>"
+"<html>"
+    "<head>"
+        "<title>ESP32-CAM Test</title>"
+    "</head>"
+    "<body>"
+        "<h1>Captured photo</h1>"
+        "<img src=\"/photo.jpg\">"
+    "</body>"
+"</html>";
 
 static void wifi_event_handler(
     void* arg,
@@ -20,7 +31,8 @@ static void wifi_event_handler(
 ){
     if (event_id == WIFI_EVENT_STA_DISCONNECTED){
         wifi_event_sta_disconnected_t* disconnect = (wifi_event_sta_disconnected_t*)event_data;
-        ESP_LOGE("wifi", "Fatal WIFI error: %d", disconnect->reason);
+        ESP_LOGW("wifi", "Failed to connect WIFI: %d, reconnecting...", disconnect->reason);
+        esp_wifi_connect();
     }
 }
 
@@ -74,7 +86,7 @@ esp_err_t connect_wifi(){
     return ESP_OK;
 }
 
-esp_err_t send_file_handler(httpd_req_t* req){
+esp_err_t photo_handler(httpd_req_t* req){
     FILE* file = fopen("/spiflash/photo.jpg", "rb");
     if (!file){
         ESP_LOGE(TAG, "File error");
@@ -84,22 +96,58 @@ esp_err_t send_file_handler(httpd_req_t* req){
 
     char buf[1024];
     size_t bytes;
+    esp_err_t result = httpd_resp_set_type(req, "image/jpeg");
+    if (result != ESP_OK){
+        return result;
+    }
 
     while ((bytes = fread(buf, 1, sizeof(buf), file)) > 0){
-        httpd_resp_send_chunk(req, buf, bytes);
+        result = httpd_resp_send_chunk(req, buf, bytes);
+        if (result != ESP_OK){
+            fclose(file);
+            return result;
+        }
     }
 
     fclose(file);
-    httpd_resp_send_chunk(req, NULL, 0);
+    result = httpd_resp_send_chunk(req, NULL, 0);
+    if (result != ESP_OK){
+        return result;
+    }
+
+    return ESP_OK;
+}
+esp_err_t index_handler(httpd_req_t* req){
+    esp_err_t result = httpd_resp_set_type(req, "text/html");
+    if (result != ESP_OK){
+        return result;
+    }
+
+    result = httpd_resp_send(req, index_html, strlen(index_html));
+    if (result != ESP_OK){
+        return result;
+    }
+
     return ESP_OK;
 }
 
 esp_err_t start_http_server(){
+    httpd_handle_t server = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.server_port = 80;
 
-    httpd_handle_t server = NULL;
     esp_err_t result = httpd_start(&server, &config);
+    if (result != ESP_OK){
+        return result;
+    }
+
+    httpd_uri_t index_uri = {
+        .uri = "/index.html",
+        .method = HTTP_GET,
+        .handler = index_handler,
+        .user_ctx = NULL
+    };
+    result = httpd_register_uri_handler(server, &index_uri);
     if (result != ESP_OK){
         return result;
     }
@@ -107,10 +155,9 @@ esp_err_t start_http_server(){
     httpd_uri_t photo_uri = {
         .uri = "/photo.jpg",
         .method = HTTP_GET,
-        .handler = send_file_handler,
+        .handler = photo_handler,
         .user_ctx = NULL
     };
-    
     result = httpd_register_uri_handler(server, &photo_uri);
     if (result != ESP_OK){
         return result;

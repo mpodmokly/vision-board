@@ -43,16 +43,16 @@ esp_err_t init_filesystem(const char* base_path, const char* partition_label){
         return ESP_OK;
     }
     
-    ESP_LOGW(TAG, "Failed to mount SPIFFS (%s), trying to format...", esp_err_to_name(result));
+    ESP_LOGW(TAG, "Failed to mount SPIFFS: %s, trying to format...", esp_err_to_name(result));
     result = esp_spiffs_format(partition_label);
     if (result != ESP_OK){
-        ESP_LOGE(TAG, "Failed to format SPIFFS (%s)", esp_err_to_name(result));
+        ESP_LOGE(TAG, "Failed to format SPIFFS: %s", esp_err_to_name(result));
         return result;
     }
 
     result = esp_vfs_spiffs_register(&config);
     if (result != ESP_OK){
-        ESP_LOGE(TAG, "Failed to mount SPIFFS after format (%s)", esp_err_to_name(result));
+        ESP_LOGE(TAG, "Failed to mount SPIFFS after format: %s", esp_err_to_name(result));
     }
 
     ESP_LOGI(TAG, "SPIFFS mounted successfully");
@@ -102,13 +102,13 @@ void app_main(){
 
     esp_err_t result = init_filesystem("/spiflash", NULL);
     if (result != ESP_OK){
-        ESP_LOGE(TAG, "Failed to mount SPIFFS (%s), cannot continue", esp_err_to_name(result));
+        ESP_LOGE(TAG, "Failed to mount SPIFFS: %s, cannot continue", esp_err_to_name(result));
         return;
     }
 
     result = init_camera();
     if (result != ESP_OK){
-        ESP_LOGE(TAG, "Failed to init camera (%s), cannot continue", esp_err_to_name(result));
+        ESP_LOGE(TAG, "Failed to init camera: %s, cannot continue", esp_err_to_name(result));
         return;
     }
 
@@ -146,5 +146,8 @@ void app_main(){
     }
 
     ESP_LOGI(TAG, "WIFI connected");
-    start_http_server();
+    result = start_http_server();
+    if (result != ESP_OK){
+        ESP_LOGE(TAG, "Failed to start HTTP server: %s", esp_err_to_name(result));
+    }
 }
