@@ -4,8 +4,8 @@
 #include "esp_err.h"
 #include "esp_http_server.h"
 
-void connect_wifi();
+esp_err_t connect_wifi();
 esp_err_t send_file_handler(httpd_req_t* req);
-void start_http_server();
+esp_err_t start_http_server();
 
 #endif // HTTP_SERVER_H

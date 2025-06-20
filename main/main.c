@@ -139,6 +139,12 @@ void app_main(){
     fclose(file);
     ESP_LOGI(TAG, "File saved to /spiflash/photo.jpg");
 
-    connect_wifi();
+    result = connect_wifi();
+    if (result != ESP_OK){
+        ESP_LOGE(TAG, "Failed to connect WIFI: %s", esp_err_to_name(result));
+        return;
+    }
+
+    ESP_LOGI(TAG, "WIFI connected");
     start_http_server();
 }

@@ -17,4 +17,4 @@ Used classes:
 * STOP (14)
 * no vehicles (15)
 * no entry (17)
-* pedestrian crossin (27)
+* pedestrian crossing (27)
