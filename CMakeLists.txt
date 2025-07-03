@@ -1,3 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(EXTRA_COMPONENT_DIRS ${CMAKE_SOURCE_DIR}/components)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(vision_board)

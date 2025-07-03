@@ -87,7 +87,7 @@ esp_err_t connect_wifi(){
 }
 
 esp_err_t photo_handler(httpd_req_t* req){
-    FILE* file = fopen("/spiflash/photo.jpg", "rb");
+    FILE* file = fopen("/spiffs/photo.jpg", "rb");
     if (!file){
         ESP_LOGE(TAG, "File error");
         httpd_resp_send_500(req);
